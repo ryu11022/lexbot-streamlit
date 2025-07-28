@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 from PIL import Image
-import pytesseract
 import json
 import re
 from dotenv import load_dotenv
