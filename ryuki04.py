@@ -1,6 +1,5 @@
 import streamlit as st
 import os
-from PIL import Image
 import json
 import re
 from dotenv import load_dotenv
