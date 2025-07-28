@@ -1,12 +1,13 @@
 import streamlit as st
 import os
+from PIL import Image
 import json
 import re
+from dotenv import load_dotenv
 import google.generativeai as genai
 import speech_recognition as sr
 import requests
 from google.api_core.exceptions import ResourceExhausted
-import random
 import html
 from datetime import datetime
 now = datetime.now()
@@ -15,6 +16,7 @@ from fire import initialize_firestore, save_user_history, load_user_history, cle
 db = initialize_firestore()
 
 # APIキー設定
+load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 model = genai.GenerativeModel("models/gemini-1.5-flash")
 
@@ -749,6 +751,15 @@ def recognize_speech():
         st.warning("Voice recognition failed")
         return ""
 
+def extract_words_from_uploaded_image(uploaded_file):
+    try:
+        image = Image.open(uploaded_file)
+        text = pytesseract.image_to_string(image, lang='eng+jpn')
+        words = text.split()
+        return words
+    except:
+        return []
+
 def safe_generate_content(prompt):
     try:
         response = model.generate_content(prompt)
@@ -1255,6 +1266,7 @@ Return the output as a pure JSON array starting with [] (no explanations or mark
     """
 
     return prompt
+
 
 # ===== 採点 =====
 def grade(quiz, answers):
