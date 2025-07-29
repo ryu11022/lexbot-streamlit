@@ -1,18 +1,36 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
-from dotenv import load_dotenv
+import json
 
-load_dotenv()
+try:
+    import streamlit as st
+    STREAMLIT = True
+except ImportError:
+    STREAMLIT = False
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except:
+    pass
+
 SERVICE_ACCOUNT_PATH = os.getenv("FIREBASE_CREDENTIAL_PATH")
 
 def initialize_firestore():
-    if not SERVICE_ACCOUNT_PATH or not os.path.exists(SERVICE_ACCOUNT_PATH):
-        raise FileNotFoundError(f"❌ サービスアカウントファイルが見つかりません。現在の設定: {SERVICE_ACCOUNT_PATH}")
-
     if not firebase_admin._apps:
-        cred = credentials.Certificate(SERVICE_ACCOUNT_PATH)
+        if SERVICE_ACCOUNT_PATH and os.path.exists(SERVICE_ACCOUNT_PATH):
+            # ✅ ローカル環境（.env 経由）
+            cred = credentials.Certificate(SERVICE_ACCOUNT_PATH)
+        elif STREAMLIT and "FIREBASE_SERVICE_ACCOUNT" in st.secrets:
+            # ✅ Streamlit Cloud 環境（secrets.toml 経由）
+            service_account_info = json.loads(st.secrets["FIREBASE_SERVICE_ACCOUNT"])
+            cred = credentials.Certificate(service_account_info)
+        else:
+            raise FileNotFoundError(f"❌ Firebaseのサービスアカウント情報が見つかりません。")
+
         firebase_admin.initialize_app(cred)
+
     return firestore.client()
 
 def save_user_history(db, user_id, new_entry):
@@ -46,5 +64,4 @@ def clear_user_history(db, user_id):
     if not user_id:
         return
 
-    doc_ref = db.collection("user_histories").document(user_id)
-    doc_ref.delete()
+    db.collection("user_histories").document(user_id).delete()
