@@ -4,4 +4,3 @@ python-dotenv
 openai
 requests
 SpeechRecognition
-firebase-admin
