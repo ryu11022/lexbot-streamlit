@@ -12,9 +12,6 @@ import html
 from datetime import datetime
 now = datetime.now()
 
-from fire import initialize_firestore, save_user_history, load_user_history, clear_user_history
-db = initialize_firestore()
-
 # APIキー設定
 load_dotenv()
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -22,50 +19,8 @@ model = genai.GenerativeModel("models/gemini-1.5-flash")
 
 st.title("LexBot")
 
-def firebase_login(email, password, api_key):
-    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
-    payload = {
-        "email": email,
-        "password": password,
-        "returnSecureToken": True
-    }
-    res = requests.post(url, json=payload)
-    if res.status_code == 200:
-        return res.json()
-    else:
-        return None
-
-def firebase_signup(email, password, api_key):
-    url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={api_key}"
-    payload = {
-        "email": email,
-        "password": password,
-        "returnSecureToken": True
-    }
-    res = requests.post(url, json=payload)
-    if res.status_code == 200:
-        return res.json()
-    else:
-        return None
-
-# ========== 履歴の読み込み / 保存 ==========
-if "user_id" in st.session_state and "history" not in st.session_state:
-    st.session_state.history = load_user_history(db, st.session_state.user_id)
-
-if "user_id" in st.session_state and "history" in st.session_state and st.session_state.history:
-    save_user_history(db, st.session_state.user_id, st.session_state.history[-1])
-
 # ラベル
 direction_label = {"en-to-ja": "英語から日本語", "ja-to-en": "日本語から英語"}
-
-from deep_translator import GoogleTranslator  
-
-def translate(word, source='en', target='ja'):
-    try:
-        return GoogleTranslator(source=source, target=target).translate(word)
-    except Exception as e:
-        return f"(翻訳失敗: {e})"
-
 
 # ==== 多言語対応用 ==== 
 LANGUAGES = ["English", "日本語", "中文", "한국어", "Español"]
@@ -751,15 +706,6 @@ def recognize_speech():
         st.warning("Voice recognition failed")
         return ""
 
-def extract_words_from_uploaded_image(uploaded_file):
-    try:
-        image = Image.open(uploaded_file)
-        text = pytesseract.image_to_string(image, lang='eng+jpn')
-        words = text.split()
-        return words
-    except:
-        return []
-
 def safe_generate_content(prompt):
     try:
         response = model.generate_content(prompt)
@@ -857,78 +803,12 @@ def show_history_screen():
         else:
             st.warning(T["no_history"])
 
-def login_form():
-    st.title(T["login"])
-
-    if "user_id" in st.session_state and st.session_state["user_id"]:
-        st.success(T["logged_in_as"] + st.session_state["user_id"])
-        if st.button(T["logout"]):
-            st.session_state.clear()
-            st.rerun()
-        return
-
-    email = st.text_input(T["email"], key="email_login")
-    password = st.text_input(T["password"], type="password", key="password_login")
-    login_clicked = st.button(T["login_with_email"])
-
-    api_key = "AIzaSyBJ2-ccYSAC5LuY1ZVPDKqd8aLzforJPiY"  # あなたのAPIキー
-
-    if login_clicked:
-        user_info = firebase_login(email, password, api_key)
-        if user_info:
-            st.session_state.user_id = user_info["localId"]
-            st.session_state.id_token = user_info["idToken"]
-            st.session_state.is_guest = False
-            st.session_state.history = load_user_history(db, st.session_state.user_id)
-            st.success(T["logged_in_as"] + email)
-            st.rerun()
-        else:
-            st.error(T["login_failed"] + "Invalid email or password.")
-            st.session_state.is_guest = True
-
-    if st.button(T["make_new_account"]):
-        st.session_state.stage = 'signup'
-        st.rerun()
-
-    if not email and not password and "user_id" not in st.session_state:
-        st.session_state.user_id = "guest_" + str(datetime.now().timestamp())
-        st.info(T["guest_mode"])
-        st.session_state.is_guest = True
-
-def signup_form():
-    st.title(T["make_new_account"])
-
-    email = st.text_input("email", key="email_signup")
-    password = st.text_input("password", type="password", key="password_signup")
-    signup_clicked = st.button(T["create_account"])
-
-    api_key = "AIzaSyBJ2-ccYSAC5LuY1ZVPDKqd8aLzforJPiY"  # あなたのAPIキー
-
-    if signup_clicked:
-        user_info = firebase_signup(email, password, api_key)
-        if user_info:
-            st.session_state.user_id = user_info["localId"]
-            st.session_state.id_token = user_info["idToken"]
-            st.success(email + T["account_created_successfully"])
-            st.session_state.is_guest = False
-            st.session_state.stage = 'select-input'
-            st.rerun()
-        else:
-            st.error(T["account_creation_failed"] + " This email may already be registered.")
-
 # ==== サイドバー ====
 def render_sidebar():
     T = ui_text.get(st.session_state.get("ui_lang", "English"), {})
 
     with st.sidebar:
         st.markdown("## Menu")
-
-        # ゲスト表示
-        if "user_id" not in st.session_state or st.session_state.get("is_guest"):
-            st.info("Guest")
-
-        if st.button(T["login"]):
-            change_stage("login")  # ← これでログイン画面へ遷移する
 
         if st.button("📘 " + T["start_quiz"]):
             st.session_state.input_mode = "test"
@@ -1742,12 +1622,6 @@ elif st.session_state.stage == 'results':
     # ★ 結果画面
     st.subheader("result")
     # 採点表示ややり直し機能をここで呼ぶ
-elif st.session_state.stage == "login":
-    login_form()
-    st.stop()
-elif st.session_state.stage == "signup":
-    signup_form()
-    st.stop()
 elif st.session_state.stage == 'flashcard':
     # ✅ すでに表示コードあり → 何もしなくてOK（コード本体がすでにある）
     pass
