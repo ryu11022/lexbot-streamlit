@@ -1,0 +1,29 @@
+# 環境ファイル（APIキーなど機密情報）
+.env
+lexbot-service-account.json
+
+# Pythonキャッシュ
+__pycache__/
+*.py[cod]
+
+# Streamlitの一時ファイル
+*.streamlit/
+
+# Jupyter Notebookのチェックポイント（もし使っていれば）
+.ipynb_checkpoints/
+
+# OS固有ファイル
+.DS_Store
+Thumbs.db
+
+# VSCode等のエディタ設定
+.vscode/
+.idea/
+
+# 仮想環境（例：venv）
+venv/
+.venv/
+
+# Firebase CLIの設定など（使っていれば）
+.firebase/
+firebase-debug.log
