@@ -12,20 +12,21 @@ import html
 from datetime import datetime
 now = datetime.now()
 
-# APIキー設定
-api_key = None
-try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-except Exception:
-    pass
+# --- APIキー設定 ---
+# 本番（Streamlit Cloud）から取得
+api_key = st.secrets.get("GEMINI_API_KEY")
 
-# ローカル用のフォールバック
+# ローカル用フォールバック
 if not api_key:
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY")
 
+# デバッグ: Secretsにあるキー名一覧を表示（本番で一時的に使うと便利）
+# st.write("Secrets keys:", list(st.secrets.keys()))
+
 if not api_key:
     st.error("Gemini API Key が設定されていません。")
+    st.stop()  # ← キーが無ければ処理を終了
 else:
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel("gemini-1.5-flash")
@@ -1640,6 +1641,7 @@ elif st.session_state.stage == 'flashcard':
     pass
 elif st.session_state.stage == 'history':
     show_history_screen()  # ← 関数にしてあるのでこれでOK
+
 
 
 
