@@ -13,22 +13,23 @@ from datetime import datetime
 now = datetime.now()
 
 # APIキー設定
-api_key = None
-try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-except Exception:
-    pass
+# 本番 → Secrets から
+api_key = st.secrets.get("GEMINI_API_KEY")
 
-# ローカル用のフォールバック
+# ローカル → .env から
 if not api_key:
     load_dotenv()
     api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    st.error("Gemini API Key が設定されていません。")
+    st.stop()  # ← APIキーがない場合はここで処理を終了して画面に止める
 else:
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel("gemini-1.5-flash")
+
+# ここまで来れば model は必ず存在
+quiz_json_str = model.generate_content(prompt).text
+
 st.title("LexBot")
 
 # ラベル
@@ -1639,4 +1640,5 @@ elif st.session_state.stage == 'flashcard':
     pass
 elif st.session_state.stage == 'history':
     show_history_screen()  # ← 関数にしてあるのでこれでOK
+
 
