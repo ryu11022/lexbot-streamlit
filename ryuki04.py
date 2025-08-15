@@ -13,10 +13,22 @@ from datetime import datetime
 now = datetime.now()
 
 # APIキー設定
-load_dotenv()
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel("models/gemini-1.5-flash")
+api_key = None
+try:
+    api_key = st.secrets["GEMINI_API_KEY"]
+except Exception:
+    pass
 
+# ローカル用のフォールバック
+if not api_key:
+    load_dotenv()
+    api_key = os.getenv("GEMINI_API_KEY")
+
+if not api_key:
+    st.error("Gemini API Key が設定されていません。")
+else:
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel("gemini-1.5-flash")
 st.title("LexBot")
 
 # ラベル
@@ -1627,3 +1639,4 @@ elif st.session_state.stage == 'flashcard':
     pass
 elif st.session_state.stage == 'history':
     show_history_screen()  # ← 関数にしてあるのでこれでOK
+
