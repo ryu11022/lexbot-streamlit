@@ -179,7 +179,11 @@ ui_text = {
         "score": "Score",
         "timestamp": "Date Taken",
         "questions": "Questions",
-        "select_translation_language": "Select translation language"
+        "select_translation_language": "Select translation language",
+        "reset_success": "All words have been reset",
+        "deleted": "Deleted",
+        "no_words_entered": "No words entered",
+        "delete_word": "Delete word"
     },
     "日本語": {
         "title": "LexBot",
@@ -302,7 +306,11 @@ ui_text = {
         "test": "テスト",
         "timestamp": "受験日",
         "questions": "問題一覧",
-        "select_translation_language": "翻訳する言語を選択"
+        "select_translation_language": "翻訳する言語を選択",
+        "reset_success": "すべての単語がリセットされました",
+        "deleted": "削除しました",
+        "no_words_entered": "単語が入力されていません",
+        "delete_word": "単語を削除"
     },
     "中文": {
         "title": "LexBot",
@@ -424,7 +432,11 @@ ui_text = {
         "test": "测试",
         "timestamp": "考试日期",
         "questions": "题目列表",
-        "select_translation_language": "选择翻译语言"
+        "select_translation_language": "选择翻译语言",
+        "reset_success": "所有单词已重置",
+        "deleted": "已删除",
+        "no_words_entered": "未输入单词",
+        "delete_word": "删除单词"
 },
     "한국어": {
         "title": "LexBot",
@@ -547,7 +559,11 @@ ui_text = {
         "test": "테스트",
         "timestamp": "응시 날짜",
         "questions": "문제 목록",
-        "select_translation_language": "번역 언어를 선택하세요"
+        "select_translation_language": "번역 언어를 선택하세요",
+        "reset_success": "모든 단어가 초기화되었습니다",
+        "deleted": "삭제됨",
+        "no_words_entered": "단어가 입력되지 않았습니다",
+        "delete_word": "단어 삭제"
     },
     "Español": {
         "title": "LexBot",
@@ -668,7 +684,11 @@ ui_text = {
         "test": "Prueba",
         "timestamp": "Fecha",
         "questions": "Preguntas",
-        "select_translation_language": "Seleccione el idioma de traducción"
+        "select_translation_language": "Seleccione el idioma de traducción",
+        "reset_success": "Todas las palabras han sido restablecidas",
+        "deleted": "Eliminado",
+        "no_words_entered": "No se han ingresado palabras",
+        "delete_word": "Eliminar palabra"
     },
 }
 
@@ -1638,5 +1658,6 @@ elif st.session_state.stage == 'flashcard':
     pass
 elif st.session_state.stage == 'history':
     show_history_screen()  # ← 関数にしてあるのでこれでOK
+
 
 
