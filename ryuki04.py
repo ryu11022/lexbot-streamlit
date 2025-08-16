@@ -8,6 +8,7 @@ import google.generativeai as genai
 import speech_recognition as sr
 import requests
 from google.api_core.exceptions import ResourceExhausted
+from urllib.parse import urlencode
 import html
 from datetime import datetime
 now = datetime.now()
@@ -833,76 +834,101 @@ def show_history_screen():
 
 # ==== サイドバー ====
 def render_sidebar():
+    # T はそのまま
     T = ui_text.get(st.session_state.get("ui_lang", "English"), {})
 
-    # ===== ハンバーガーで言語設定をサイドバーに表示 =====
-    menu = st.query_params.get("menu", None)
-    if menu == "lang":
+    # ---- クエリパラメータ ヘルパー ----
+    def qs(**overrides):
+        base = dict(st.query_params)  # 既存の menu=lang を維持するため
+        for k, v in overrides.items():
+            if v is None and k in base:
+                del base[k]
+            elif v is not None:
+                base[k] = v
+        return "?" + urlencode(base)
+
+    # ---- アクション処理（ボトムナビのクリック） ----
+    action = st.query_params.get("action", None)
+    if action == "quiz":
+        st.session_state.input_mode = "test"
+        change_stage("input")
+        st.session_state.next_stage = "config"
+        del st.query_params["action"]
+        st.rerun()
+    elif action == "flashcard":
+        st.session_state.input_mode = "flashcard"
+        change_stage("input")
+        st.session_state.next_stage = "flashcard"
+        del st.query_params["action"]
+        st.rerun()
+    elif action == "history":
+        change_stage("history")
+        del st.query_params["action"]
+        st.rerun()
+
+    # ---- 言語設定サイドバー（☰ で開く。閉じるまで維持） ----
+    if st.query_params.get("menu", None) == "lang":
         with st.sidebar:
             st.markdown("## 🌐 言語設定")
             render_language_selector("ui_lang_sidebar")
+            if st.button("✖️ Close", key="close_lang_sidebar"):
+                del st.query_params["menu"]
+                st.rerun()
 
-    # ===== CSSで下部メニューとハンバーガー配置 =====
-    st.markdown("""
-        <style>
-        .bottom-menu {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background-color: white;
-            border-top: 1px solid #ddd;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 0;
-            z-index: 9999;
-        }
-        .bottom-menu div {
-            flex: 1;
-            text-align: center;
-        }
-        .bottom-menu button {
-            width: 100%;
-            height: 60px;
-            font-size: 16px;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-        .hamburger {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            font-size: 24px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            z-index: 10000;
-        }
-        </style>
+    # ---- スタイル（下部固定・等幅・スマホ対応） ----
+    st.markdown(f"""
+    <style>
+      :root {{ --lexbot-nav-h: 64px; }}
+      /* ボトムナビに隠れないよう下余白を確保 */
+      .main .block-container {{ padding-bottom: calc(var(--lexbot-nav-h) + 16px); }}
+
+      /* 下部固定ナビ */
+      #lexbot-bottom-nav {{
+        position: fixed; bottom: 0; left: 0; right: 0; height: var(--lexbot-nav-h);
+        display: flex; flex-wrap: nowrap;
+        background: #ffffff; border-top: 1px solid #e5e7eb; z-index: 10000;
+      }}
+      #lexbot-bottom-nav a {{
+        flex: 1 1 33.3333%;
+        display: flex; align-items: center; justify-content: center;
+        text-decoration: none; font-size: 16px; padding: 0 8px;
+        color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }}
+      #lexbot-bottom-nav a:active {{ opacity: .8; }}
+
+      /* ハンバーガー（左上固定） */
+      #lexbot-hamburger {{
+        position: fixed; top: 12px; left: 12px; z-index: 10001;
+        font-size: 24px; line-height: 1; text-decoration: none;
+        background: #ffffffcc; padding: 6px 10px; border-radius: 10px; border: 1px solid #e5e7eb;
+        color: inherit;
+      }}
+
+      /* モバイル最適化 */
+      @media (max-width: 480px) {{
+        :root {{ --lexbot-nav-h: 58px; }}
+        #lexbot-bottom-nav a {{ font-size: 15px; }}
+      }}
+    </style>
     """, unsafe_allow_html=True)
 
-    # ===== ハンバーガーボタン =====
-    st.markdown('<button class="hamburger" onclick="window.location.href=\'?menu=lang\'">☰</button>', unsafe_allow_html=True)
+    # ---- ハンバーガー（言語設定サイドバーを開く） ----
+    st.markdown(
+        f"<a id='lexbot-hamburger' href='{qs(menu=\"lang\")}' title='{T.get('language_settings', 'Language Settings')}'>☰</a>",
+        unsafe_allow_html=True
+    )
 
-    # ===== 下部固定メニュー（3等分） =====
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("📘 " + T["start_quiz"], key="quiz_btn"):
-            st.session_state.input_mode = "test"
-            change_stage("input")
-            st.session_state.next_stage = "config"
-
-    with col2:
-        if st.button("📚 " + T["flashcards"], key="flash_btn"):
-            st.session_state.input_mode = "flashcard"
-            change_stage("input")
-            st.session_state.next_stage = "flashcard"
-
-    with col3:
-        if st.button("📜 " + T["history"], key="history_btn"):
-            change_stage("history")
+    # ---- 画面下部の固定ナビ（3 等分・常時表示） ----
+    st.markdown(
+        f"""
+        <nav id="lexbot-bottom-nav" role="navigation" aria-label="Bottom Navigation">
+            <a href="{qs(action='quiz')}">📘 {T['start_quiz']}</a>
+            <a href="{qs(action='flashcard')}">📚 {T['flashcards']}</a>
+            <a href="{qs(action='history')}">📜 {T['history']}</a>
+        </nav>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ==== Main Menu Screen ====
 def main_menu():
@@ -1706,6 +1732,7 @@ elif st.session_state.stage == 'flashcard':
     pass
 elif st.session_state.stage == 'history':
     show_history_screen()  # ← 関数にしてあるのでこれでOK
+
 
 
 
