@@ -836,82 +836,23 @@ def show_history_screen():
 def render_sidebar():
     T = ui_text.get(st.session_state.get("ui_lang", "English"), {})
 
-    # ===== サイドバー（言語設定のみ） =====
     with st.sidebar:
-        st.markdown("## 🌐 " + T.get("language_settings", "Language Settings"))
+        st.markdown("## Menu")
+
+        if st.button("📘 " + T["start_quiz"]):
+            st.session_state.input_mode = "test"
+            change_stage("input")
+            st.session_state.next_stage = "config"
+
+        if st.button("📚 " + T["flashcards"]):
+            st.session_state.input_mode = "flashcard"
+            change_stage("input")
+            st.session_state.next_stage = "flashcard"
+
+        if st.button("📜 " + T["history"]):
+            change_stage("history")
+
         render_language_selector("ui_lang_sidebar")
-
-    # ===== CSSで下部固定ナビを実現 =====
-    st.markdown("""
-        <style>
-        :root { --bottom-nav-height: 64px; }
-        /* 本文がナビと重ならないよう余白を確保 */
-        .main .block-container {
-            padding-bottom: calc(var(--bottom-nav-height) + 16px);
-        }
-        /* 下部固定バー */
-        #bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: var(--bottom-nav-height);
-            background: white;
-            border-top: 1px solid #ddd;
-            display: flex;
-            z-index: 9999;
-        }
-        #bottom-nav > div {
-            flex: 1;
-            display: flex;
-        }
-        #bottom-nav button {
-            flex: 1;
-            border: none;
-            background: none;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        #bottom-nav button:hover {
-            background: #f8f8f8;
-        }
-        #bottom-nav button:active {
-            background: #e0e0e0;
-        }
-        @media (max-width: 480px) {
-            :root { --bottom-nav-height: 58px; }
-            #bottom-nav button {
-                font-size: 14px;
-            }
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # ===== 下部固定ボタン（Streamlitボタン使用） =====
-    from streamlit import columns
-
-    bottom_nav = st.container()
-    with bottom_nav:
-        st.markdown('<div id="bottom-nav">', unsafe_allow_html=True)
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            if st.button(f"📘 {T['start_quiz']}", key="quiz_bottom"):
-                st.session_state.input_mode = "test"
-                change_stage("input")
-                st.session_state.next_stage = "config"
-                st.rerun()
-        with col2:
-            if st.button(f"📚 {T['flashcards']}", key="flash_bottom"):
-                st.session_state.input_mode = "flashcard"
-                change_stage("input")
-                st.session_state.next_stage = "flashcard"
-                st.rerun()
-        with col3:
-            if st.button(f"📜 {T['history']}", key="history_bottom"):
-                change_stage("history")
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
 
 # ==== Main Menu Screen ====
 def main_menu():
@@ -1715,6 +1656,7 @@ elif st.session_state.stage == 'flashcard':
     pass
 elif st.session_state.stage == 'history':
     show_history_screen()  # ← 関数にしてあるのでこれでOK
+
 
 
 
