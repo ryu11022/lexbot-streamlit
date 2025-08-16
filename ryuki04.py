@@ -861,13 +861,16 @@ def render_sidebar():
             display: flex;
             z-index: 9999;
         }
+        #bottom-nav > div {
+            flex: 1;
+            display: flex;
+        }
         #bottom-nav button {
             flex: 1;
             border: none;
             background: none;
             font-size: 16px;
             cursor: pointer;
-            padding: 0;
         }
         #bottom-nav button:hover {
             background: #f8f8f8;
@@ -884,32 +887,31 @@ def render_sidebar():
         </style>
     """, unsafe_allow_html=True)
 
-    # ===== 下部固定メニュー（3等分） =====
-    st.markdown(
-        f"""
-        <div id="bottom-nav">
-            <form action="" method="post">
-                <button name="bottom_nav" value="quiz">📘 {T['start_quiz']}</button>
-                <button name="bottom_nav" value="flashcard">📚 {T['flashcards']}</button>
-                <button name="bottom_nav" value="history">📜 {T['history']}</button>
-            </form>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # ===== 下部固定ボタン（Streamlitボタン使用） =====
+    from streamlit import columns
 
-    # ===== 下部ナビの動作処理 =====
-    if "bottom_nav" in st.session_state:
-        if st.session_state.bottom_nav == "quiz":
-            st.session_state.input_mode = "test"
-            change_stage("input")
-            st.session_state.next_stage = "config"
-        elif st.session_state.bottom_nav == "flashcard":
-            st.session_state.input_mode = "flashcard"
-            change_stage("input")
-            st.session_state.next_stage = "flashcard"
-        elif st.session_state.bottom_nav == "history":
-            change_stage("history")
+    bottom_nav = st.container()
+    with bottom_nav:
+        st.markdown('<div id="bottom-nav">', unsafe_allow_html=True)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button(f"📘 {T['start_quiz']}", key="quiz_bottom"):
+                st.session_state.input_mode = "test"
+                change_stage("input")
+                st.session_state.next_stage = "config"
+                st.rerun()
+        with col2:
+            if st.button(f"📚 {T['flashcards']}", key="flash_bottom"):
+                st.session_state.input_mode = "flashcard"
+                change_stage("input")
+                st.session_state.next_stage = "flashcard"
+                st.rerun()
+        with col3:
+            if st.button(f"📜 {T['history']}", key="history_bottom"):
+                change_stage("history")
+                st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
 
 # ==== Main Menu Screen ====
 def main_menu():
@@ -1713,6 +1715,7 @@ elif st.session_state.stage == 'flashcard':
     pass
 elif st.session_state.stage == 'history':
     show_history_screen()  # ← 関数にしてあるのでこれでOK
+
 
 
 
