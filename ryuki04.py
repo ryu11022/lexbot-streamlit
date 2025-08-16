@@ -836,8 +836,7 @@ def render_sidebar():
     T = ui_text.get(st.session_state.get("ui_lang", "English"), {})
 
     # ===== ハンバーガーで言語設定をサイドバーに表示 =====
-    params = st.experimental_get_query_params()
-    menu = params.get("menu", [None])[0]
+    menu = st.query_params.get("menu", None)
     if menu == "lang":
         with st.sidebar:
             st.markdown("## 🌐 言語設定")
@@ -1707,6 +1706,7 @@ elif st.session_state.stage == 'flashcard':
     pass
 elif st.session_state.stage == 'history':
     show_history_screen()  # ← 関数にしてあるのでこれでOK
+
 
 
 
