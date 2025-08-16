@@ -835,23 +835,75 @@ def show_history_screen():
 def render_sidebar():
     T = ui_text.get(st.session_state.get("ui_lang", "English"), {})
 
-    with st.sidebar:
-        st.markdown("## Menu")
+    # ===== ハンバーガーで言語設定をサイドバーに表示 =====
+    params = st.experimental_get_query_params()
+    menu = params.get("menu", [None])[0]
+    if menu == "lang":
+        with st.sidebar:
+            st.markdown("## 🌐 言語設定")
+            render_language_selector("ui_lang_sidebar")
 
-        if st.button("📘 " + T["start_quiz"]):
+    # ===== CSSで下部メニューとハンバーガー配置 =====
+    st.markdown("""
+        <style>
+        .bottom-menu {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0;
+            z-index: 9999;
+        }
+        .bottom-menu div {
+            flex: 1;
+            text-align: center;
+        }
+        .bottom-menu button {
+            width: 100%;
+            height: 60px;
+            font-size: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .hamburger {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 10000;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # ===== ハンバーガーボタン =====
+    st.markdown('<button class="hamburger" onclick="window.location.href=\'?menu=lang\'">☰</button>', unsafe_allow_html=True)
+
+    # ===== 下部固定メニュー（3等分） =====
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("📘 " + T["start_quiz"], key="quiz_btn"):
             st.session_state.input_mode = "test"
             change_stage("input")
             st.session_state.next_stage = "config"
 
-        if st.button("📚 " + T["flashcards"]):
+    with col2:
+        if st.button("📚 " + T["flashcards"], key="flash_btn"):
             st.session_state.input_mode = "flashcard"
             change_stage("input")
             st.session_state.next_stage = "flashcard"
 
-        if st.button("📜 " + T["history"]):
+    with col3:
+        if st.button("📜 " + T["history"], key="history_btn"):
             change_stage("history")
-
-        render_language_selector("ui_lang_sidebar")
 
 # ==== Main Menu Screen ====
 def main_menu():
